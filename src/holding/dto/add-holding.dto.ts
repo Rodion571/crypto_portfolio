@@ -1,10 +1,6 @@
 import { IsString, IsNotEmpty, IsNumber, Min } from 'class-validator';
 
 export class AddHoldingDto {
-  @IsNumber()
-  @IsNotEmpty()
-  portfolioId!: number;
-
   @IsString()
   @IsNotEmpty()
   coinId!: string;

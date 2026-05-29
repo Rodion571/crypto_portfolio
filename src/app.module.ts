@@ -17,6 +17,8 @@ import { AppController } from './app.controller';
       database: 'crypto_portfolio',
       autoLoadEntities: true,
       synchronize: false,
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
     }),
     ScheduleModule.forRoot(),
     HttpModule,

@@ -56,6 +56,9 @@ h3 {
     flex-direction: column;
     gap: 25px;
 }
+.portfolio-title {
+    margin-top: 20px; 
+}
 
 .box {
     background: rgba(255, 255, 255, 0.85);
