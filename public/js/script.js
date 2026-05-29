@@ -4,7 +4,6 @@ let currentPortfolioId = null;
 async function showChartForCoin(coinId) {
     const response = await fetch(`http://localhost:3000/holdings/history/${coinId}`);
     const historyData = await response.json();
-
     const ctx = document.getElementById('cryptoChart').getContext('2d');
 
     if (!historyData || historyData.length === 0) {
@@ -56,14 +55,10 @@ async function showChartForCoin(coinId) {
             scales: {
                 y: {
                     beginAtZero: false,
-                    grid: {
-                        color: '#f1f5f9'
-                    }
+                    grid: { color: '#f1f5f9' }
                 },
                 x: {
-                    grid: {
-                        display: false
-                    }
+                    grid: { display: false }
                 }
             }
         }
@@ -122,7 +117,8 @@ async function addHolding() {
 }
 
 async function sellHolding(coinId, availableAmount, transactionIds) {
-    const input = prompt(`Какое количество ${coinId.toUpperCase()} вы хотите продать? (Доступно: ${availableAmount})`);
+    const cleanAvailable = Number(availableAmount.toFixed(8));
+    const input = prompt(`Какое количество ${coinId.toUpperCase()} вы хотите продать? (Доступно: ${cleanAvailable})`);
     if (input === null) return; 
 
     const amountToSell = parseFloat(input);
@@ -130,8 +126,8 @@ async function sellHolding(coinId, availableAmount, transactionIds) {
         return alert('Введите корректное количество монет!');
     }
 
-    if (amountToSell > availableAmount) {
-        return alert(`Недостаточно монет на балансе! У вас есть только ${availableAmount}`);
+    if (amountToSell > cleanAvailable) {
+        return alert(`Недостаточно монет на балансе! У вас есть только ${cleanAvailable}`);
     }
 
     const idToDelete = transactionIds[0];
@@ -169,7 +165,6 @@ async function refreshAll() {
     portfolios.forEach(p => {
         if (pList) {
             const li = document.createElement('li');
-            li.classList.add('clickable-item');
             if (p.id === currentPortfolioId) {
                 li.classList.add('active-portfolio');
             }
@@ -221,18 +216,19 @@ async function refreshAll() {
     const groupedHoldings = {};
 
     holdings.forEach(h => {
+        const amountNum = Number(h.amount);
+        const priceNum = Number(h.currentPrice || 0);
+
         if (groupedHoldings[h.coinId]) {
-            groupedHoldings[h.coinId].amount += Number(h.amount);
-            groupedHoldings[h.coinId].totalValue += Number(h.totalValue);
+            groupedHoldings[h.coinId].amount = Number((groupedHoldings[h.coinId].amount + amountNum).toFixed(8));
             if (!groupedHoldings[h.coinId].ids.includes(h.id)) {
                 groupedHoldings[h.coinId].ids.push(h.id);
             }
         } else {
             groupedHoldings[h.coinId] = {
                 coinId: h.coinId,
-                amount: Number(h.amount),
-                currentPrice: Number(h.currentPrice),
-                totalValue: Number(h.totalValue),
+                amount: amountNum,
+                currentPrice: priceNum,
                 ids: [h.id]
             };
         }
@@ -241,18 +237,22 @@ async function refreshAll() {
     Object.values(groupedHoldings).forEach(h => {
         if (hList) {
             const li = document.createElement('li');
-            li.classList.add('clickable-item');
             li.onclick = () => {
                 document.getElementById('coinId').value = h.coinId;
                 showChartForCoin(h.coinId);
             };
             
             const text = document.createElement('span');
+            
+            // Рассчитываем точную общую стоимость для этой строки
+            const totalValueCalc = Number((h.amount * h.currentPrice).toFixed(2));
+            
             const priceInfo = h.currentPrice > 0 
-                ? `$${h.currentPrice.toLocaleString()} (Всего: $${h.totalValue.toLocaleString()})` 
+                ? `$${h.currentPrice.toLocaleString()} (Всего: $${totalValueCalc.toLocaleString()})` 
                 : '(Цена не найдена)';
 
-            text.textContent = `${h.amount} ${h.coinId.toUpperCase()} — ${priceInfo}`;
+            const cleanAmount = Number(h.amount.toFixed(8));
+            text.textContent = `${cleanAmount} ${h.coinId.toUpperCase()} — ${priceInfo}`;
             
             const sellBtn = document.createElement('button');
             sellBtn.classList.add('delete-btn');
@@ -282,7 +282,6 @@ async function refreshAll() {
             if (!resStats.ok) throw new Error('Бэкенд вернул ошибку при расчете статистики');
             
             const stats = await resStats.json();
-
             const totalValue = stats.totalValue || 0;
             const changeAbsolute = stats.change24hAbsolute || 0;
             const changePercent = stats.change24hPercent || 0;
@@ -320,7 +319,7 @@ async function refreshAll() {
                 });
             }
         } catch (err) {
-            console.error('Ошибка при更新обновлении статистики:', err);
+            console.error('Ошибка при обновлении статистики:', err);
             if (statTotalEl) statTotalEl.textContent = '$0';
             if (statChangeEl) {
                 statChangeEl.textContent = '$0 (0%)';

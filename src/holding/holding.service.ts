@@ -57,7 +57,7 @@ export class HoldingService {
     if (holding.amount <= amountToRemove) {
       await this.holdingRepository.delete(id);
     } else {
-      holding.amount -= amountToRemove;
+      holding.amount = Number((holding.amount - amountToRemove).toFixed(8));
       await this.holdingRepository.save(holding);
     }
     return { success: true };
@@ -94,9 +94,9 @@ export class HoldingService {
 
     holdings.forEach((h) => {
       const currentPrice = currentPrices[h.coinId] || 0;
-      const value = h.amount * currentPrice;
-      totalValue += value;
-      coinValues[h.coinId] = (coinValues[h.coinId] || 0) + value;
+      const value = Number((Number(h.amount) * currentPrice).toFixed(2));
+      totalValue = Number((totalValue + value).toFixed(2));
+      coinValues[h.coinId] = Number(((coinValues[h.coinId] || 0) + value).toFixed(2));
     });
 
     const topCoins = Object.entries(coinValues)
@@ -122,10 +122,11 @@ export class HoldingService {
         .getOne();
       
       const price24h = snapshot24h ? Number(snapshot24h.priceUsd) : currentPrices[h.coinId];
-      totalValue24hAgo += h.amount * price24h;
+      const value24h = Number((Number(h.amount) * price24h).toFixed(2));
+      totalValue24hAgo = Number((totalValue24hAgo + value24h).toFixed(2));
     }
 
-    const change24hAbsolute = totalValue - totalValue24hAgo;
+    const change24hAbsolute = Number((totalValue - totalValue24hAgo).toFixed(2));
     const change24hPercent = totalValue24hAgo > 0 
       ? ((totalValue - totalValue24hAgo) / totalValue24hAgo) * 100 
       : 0;
@@ -146,7 +147,7 @@ export class HoldingService {
         const sum = filteredSnapshots.reduce((acc, s) => acc + Number(s.priceUsd), 0);
         averagePrices7Days[coinId] = Number((sum / filteredSnapshots.length).toFixed(2));
       } else {
-        averagePrices7Days[coinId] = currentPrices[coinId];
+        averagePrices7Days[coinId] = Number(currentPrices[coinId].toFixed(2));
       }
     }
 
