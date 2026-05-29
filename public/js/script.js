@@ -6,7 +6,7 @@ async function showChartForCoin(coinId) {
     const historyData = await response.json();
     const ctx = document.getElementById('cryptoChart').getContext('2d');
 
-    if (!historyData || historyData.length === 0) {
+    if (!historyData || historyData.length === 0 || !Array.isArray(historyData)) {
         if (cryptoChart) {
             cryptoChart.destroy();
         }
@@ -70,7 +70,7 @@ async function createPortfolio() {
     const name = input.value;
     if (!name) return alert('Введите название портфеля!');
 
-    const response = await fetch('http://localhost:3000/portfolios/create', {
+    const response = await fetch('http://localhost:3000/portfolios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name })
@@ -105,10 +105,10 @@ async function addHolding() {
         return alert('Количество монет должно быть не меньше 0.1!');
     }
 
-    await fetch('http://localhost:3000/holdings/add', {
+    await fetch(`http://localhost:3000/portfolios/${portfolioId}/holdings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ portfolioId, coinId, amount })
+        body: JSON.stringify({ coinId, amount })
     });
 
     currentPortfolioId = portfolioId;
@@ -145,7 +145,10 @@ async function refreshAll() {
     let portfolios = [];
     try {
         const resPortfolios = await fetch('http://localhost:3000/portfolios/all');
-        portfolios = await resPortfolios.json();
+        const dataPortfolios = await resPortfolios.json();
+        if (Array.isArray(dataPortfolios)) {
+            portfolios = dataPortfolios;
+        }
     } catch (err) {
         console.error('Ошибка загрузки портфелей:', err);
     }
@@ -202,12 +205,17 @@ async function refreshAll() {
     });
 
     let holdings = [];
-    try {
-        const resHoldings = await fetch('http://localhost:3000/holdings/all');
-        const allHoldings = await resHoldings.json();
-        holdings = allHoldings.filter(h => h.portfolio && h.portfolio.id === currentPortfolioId);
-    } catch (err) {
-        console.error('Ошибка загрузки активов:', err);
+    if (currentPortfolioId) {
+        try {
+            const resPortfolioInfo = await fetch(`http://localhost:3000/portfolios/${currentPortfolioId}`);
+            const portfolioInfo = await resPortfolioInfo.json();
+            
+            if (portfolioInfo && Array.isArray(portfolioInfo.holdings)) {
+                holdings = portfolioInfo.holdings;
+            }
+        } catch (err) {
+            console.error('Ошибка загрузки активов портфеля:', err);
+        }
     }
 
     const hList = document.getElementById('holdingsList');
@@ -218,12 +226,10 @@ async function refreshAll() {
     holdings.forEach(h => {
         const amountNum = Number(h.amount);
         const currentPriceNum = Number(h.currentPrice || 0);
-        // Если бэкенд не присылает историческую цену покупки, используем текущую рыночную цену
         const buyPriceNum = Number(h.buyPrice || h.currentPrice || 0); 
 
         if (groupedHoldings[h.coinId]) {
             const newAmount = groupedHoldings[h.coinId].amount + amountNum;
-            // Рассчитываем общую сумму затрат, чтобы найти средневзвешенную цену входа
             const totalSpent = (groupedHoldings[h.coinId].amount * groupedHoldings[h.coinId].averageBuyPrice) + (amountNum * buyPriceNum);
             
             groupedHoldings[h.coinId].amount = Number(newAmount.toFixed(8));
@@ -265,8 +271,6 @@ async function refreshAll() {
             }
 
             const cleanAmount = Number(h.amount.toFixed(8));
-            
-            // Если монеты покупались по разным ценам, выведется средняя цена входа
             text.innerHTML = `${cleanAmount} ${h.coinId.toUpperCase()} — Вход: $${h.averageBuyPrice.toLocaleString()} (Всего: $${totalValueCalc.toLocaleString()})${badge}`;
             
             const sellBtn = document.createElement('button');
@@ -293,7 +297,7 @@ async function refreshAll() {
 
     if (currentPortfolioId) {
         try {
-            const resStats = await fetch(`http://localhost:3000/holdings/stats/${currentPortfolioId}`);
+            const resStats = await fetch(`http://localhost:3000/portfolios/${currentPortfolioId}/stats`);
             if (!resStats.ok) throw new Error('Бэкенд вернул ошибку при расчете статистики');
             
             const stats = await resStats.json();

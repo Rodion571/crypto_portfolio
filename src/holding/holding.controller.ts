@@ -3,51 +3,36 @@ import { HoldingService } from './holding.service';
 import { CryptoApiService } from './crypto-api.service';
 import { AddHoldingDto } from './dto/add-holding.dto';
 
-@Controller('holdings')
+@Controller()
 export class HoldingController {
   constructor(
     private readonly holdingService: HoldingService,
     private readonly cryptoApiService: CryptoApiService,
   ) {}
 
-  @Post('add')
-  create(@Body() addHoldingDto: AddHoldingDto) {
+  @Post('portfolios/:portfolioId/holdings')
+  create(
+    @Param('portfolioId') portfolioId: string,
+    @Body() addHoldingDto: AddHoldingDto,
+  ) {
     return this.holdingService.create({
-      portfolioId: addHoldingDto.portfolioId,
+      portfolioId: Number(portfolioId),
       coinId: addHoldingDto.coinId,
       amount: addHoldingDto.amount
     });
   }
 
-  @Get('all')
-  async findAll() {
-    const holdings = await this.holdingService.findAll();
-    
-    return Promise.all(
-      holdings.map(async (h) => {
-        const currentPrice = await this.cryptoApiService.getPriceInUSD(h.coinId);
-        const totalValue = currentPrice * h.amount;
-        
-        return {
-          ...h,
-          currentPrice: currentPrice,
-          totalValue: Number(totalValue.toFixed(2)),
-        };
-      })
-    );
-  }
-
-  @Delete(':id')
+  @Delete('holdings/:id')
   remove(@Param('id') id: string) {
     return this.holdingService.remove(Number(id));
   }
 
-  @Get('history/:coinId')
+  @Get('holdings/history/:coinId')
   getHistory(@Param('coinId') coinId: string) {
     return this.holdingService.getCoinHistory(coinId);
   }
 
-  @Put(':id/reduce')
+  @Put('holdings/:id/reduce')
   async reduceHolding(
     @Param('id') id: string,
     @Body('amount') amount: number,
@@ -55,7 +40,7 @@ export class HoldingController {
     return this.holdingService.reduceAmount(Number(id), amount);
   }
 
-  @Get('stats/:portfolioId')
+  @Get('portfolios/:portfolioId/stats')
   async getStats(@Param('portfolioId') portfolioId: string) {
     return this.holdingService.getPortfolioStats(Number(portfolioId));
   }

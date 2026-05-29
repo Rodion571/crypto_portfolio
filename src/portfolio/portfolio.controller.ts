@@ -6,7 +6,7 @@ import { CreatePortfolioDto } from './dto/create-portfolio.dto';
 export class PortfolioController {
   constructor(private readonly portfolioService: PortfolioService) {}
 
-  @Post('create')
+  @Post()
   async create(@Body() createPortfolioDto: CreatePortfolioDto) {
     return await this.portfolioService.create(createPortfolioDto.name);
   }
@@ -14,6 +14,11 @@ export class PortfolioController {
   @Get('all')
   async findAll() {
     return await this.portfolioService.findAll();
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return await this.portfolioService.findOneWithHoldings(+id);
   }
 
   @Delete(':id')
