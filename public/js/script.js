@@ -217,10 +217,18 @@ async function refreshAll() {
 
     holdings.forEach(h => {
         const amountNum = Number(h.amount);
-        const priceNum = Number(h.currentPrice || 0);
+        const currentPriceNum = Number(h.currentPrice || 0);
+        // Если бэкенд не присылает историческую цену покупки, используем текущую рыночную цену
+        const buyPriceNum = Number(h.buyPrice || h.currentPrice || 0); 
 
         if (groupedHoldings[h.coinId]) {
-            groupedHoldings[h.coinId].amount = Number((groupedHoldings[h.coinId].amount + amountNum).toFixed(8));
+            const newAmount = groupedHoldings[h.coinId].amount + amountNum;
+            // Рассчитываем общую сумму затрат, чтобы найти средневзвешенную цену входа
+            const totalSpent = (groupedHoldings[h.coinId].amount * groupedHoldings[h.coinId].averageBuyPrice) + (amountNum * buyPriceNum);
+            
+            groupedHoldings[h.coinId].amount = Number(newAmount.toFixed(8));
+            groupedHoldings[h.coinId].averageBuyPrice = Number((totalSpent / newAmount).toFixed(2));
+            
             if (!groupedHoldings[h.coinId].ids.includes(h.id)) {
                 groupedHoldings[h.coinId].ids.push(h.id);
             }
@@ -228,7 +236,8 @@ async function refreshAll() {
             groupedHoldings[h.coinId] = {
                 coinId: h.coinId,
                 amount: amountNum,
-                currentPrice: priceNum,
+                averageBuyPrice: buyPriceNum,
+                currentPrice: currentPriceNum,
                 ids: [h.id]
             };
         }
@@ -244,15 +253,21 @@ async function refreshAll() {
             
             const text = document.createElement('span');
             
-            // Рассчитываем точную общую стоимость для этой строки
             const totalValueCalc = Number((h.amount * h.currentPrice).toFixed(2));
+            const totalSpentCalc = Number((h.amount * h.averageBuyPrice).toFixed(2));
+            const profitLoss = Number((totalValueCalc - totalSpentCalc).toFixed(2));
             
-            const priceInfo = h.currentPrice > 0 
-                ? `$${h.currentPrice.toLocaleString()} (Всего: $${totalValueCalc.toLocaleString()})` 
-                : '(Цена не найдена)';
+            let badge = '';
+            if (profitLoss > 0) {
+                badge = ` <span class="stat-positive">(+$${profitLoss.toLocaleString()})</span>`;
+            } else if (profitLoss < 0) {
+                badge = ` <span class="stat-negative">(-$${Math.abs(profitLoss).toLocaleString()})</span>`;
+            }
 
             const cleanAmount = Number(h.amount.toFixed(8));
-            text.textContent = `${cleanAmount} ${h.coinId.toUpperCase()} — ${priceInfo}`;
+            
+            // Если монеты покупались по разным ценам, выведется средняя цена входа
+            text.innerHTML = `${cleanAmount} ${h.coinId.toUpperCase()} — Вход: $${h.averageBuyPrice.toLocaleString()} (Всего: $${totalValueCalc.toLocaleString()})${badge}`;
             
             const sellBtn = document.createElement('button');
             sellBtn.classList.add('delete-btn');

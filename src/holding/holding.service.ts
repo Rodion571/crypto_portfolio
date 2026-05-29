@@ -109,19 +109,23 @@ export class HoldingService {
       .slice(0, 3);
 
     const now = new Date();
-    const date24hAgoStart = new Date(now.getTime() - 24 * 60 * 60 * 1000 - 15 * 60 * 1000);
-    const date24hAgoEnd = new Date(now.getTime() - 24 * 60 * 60 * 1000 + 15 * 60 * 1000);
+    const target24hAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     let totalValue24hAgo = 0;
 
     for (const h of holdings) {
       const snapshot24h = await this.priceSnapshotRepository.createQueryBuilder('snapshot')
         .where('snapshot.coinId = :coinId', { coinId: h.coinId.toLowerCase() })
-        .andWhere('snapshot.capturedAt BETWEEN :start AND :end', { start: date24hAgoStart, end: date24hAgoEnd })
+        .andWhere('snapshot.capturedAt <= :target', { target: target24hAgo })
         .orderBy('snapshot.capturedAt', 'DESC')
         .getOne();
       
-      const price24h = snapshot24h ? Number(snapshot24h.priceUsd) : currentPrices[h.coinId];
+      const fallbackSnapshot = snapshot24h || await this.priceSnapshotRepository.findOne({
+        where: { coinId: h.coinId.toLowerCase() },
+        order: { capturedAt: 'ASC' }
+      });
+      
+      const price24h = fallbackSnapshot ? Number(fallbackSnapshot.priceUsd) : currentPrices[h.coinId];
       const value24h = Number((Number(h.amount) * price24h).toFixed(2));
       totalValue24hAgo = Number((totalValue24hAgo + value24h).toFixed(2));
     }
