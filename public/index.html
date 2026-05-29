@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>💵 Crypto Tracker</title>
+    <link rel="stylesheet" href="./style/style.css">
+</head>
+<body>
+    <div class="header-container">
+        <img src="./img/zolotaja-moneta-bitcoin.png" alt="BTC">
+        <h1>My Crypto Tracker</h1>
+        <img src="./img/money_2.png" alt="Dollar">
+    </div>
+    
+    <div class="main-layout">
+        <div class="left-column">
+            <div class="box">
+                <h3>1. Создать портфель</h3>
+                <input type="text" id="portfolioName" placeholder="Название">
+                <button onclick="createPortfolio()">Создать</button>
+                
+                <h3>Список портфелей:</h3>
+                <ul id="portfoliosList"></ul>
+            </div>
+
+            <div class="box">
+                <h3>2. Добавить монету</h3>
+                <select id="holdPortfolioId" class="select-style"></select>
+                <select id="coinId" class="select-style">
+                    <option value="bitcoin">Bitcoin (BTC)</option>
+                    <option value="ethereum">Ethereum (ETH)</option>
+                    <option value="binancecoin">BNB (BNB)</option>
+                    <option value="ripple">Ripple (XRP)</option>
+                    <option value="solana">Solana (SOL)</option>
+                </select>
+                <input type="number" id="amount" min="0.1" step="0.1" placeholder="Количество (мин. 0.1)">
+                <button onclick="addHolding()">Добавить актив</button>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="box">
+                <h3>Купленные активы:</h3>
+                <ul id="holdingsList"></ul>
+            </div>
+
+            <div class="box">
+                <h3>Статистика портфеля</h3>
+                <div style="display: flex; gap: 20px; margin-top: 15px;">
+                    <div style="flex: 1; background: rgba(255, 255, 255, 0.5); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);">
+                        <div style="font-size: 14px; color: #475569;">Общая стоимость</div>
+                        <div id="statTotalValue" style="font-size: 20px; font-weight: bold; margin-top: 5px;">$0</div>
+                    </div>
+                    <div style="flex: 1; background: rgba(255, 255, 255, 0.5); padding: 15px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.05);">
+                        <div style="font-size: 14px; color: #475569;">Изменение за 24ч</div>
+                        <div id="statChange24h" style="font-size: 20px; font-weight: bold; margin-top: 5px;">$0 (0%)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="box">
+                <h3>3. График изменений цены (БД)</h3>
+                <div class="chart-container">
+                    <canvas id="cryptoChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="./js/script.js"></script>
+</body>
+</html>
