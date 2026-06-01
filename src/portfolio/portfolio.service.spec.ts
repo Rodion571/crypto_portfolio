@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PortfolioService } from './portfolio.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { PortfolioEntity } from './portfolio.entity';
+import { PortfolioHistory } from './portfolio-history.entity';
 import { DataSource } from 'typeorm';
 import { describe, beforeEach, afterEach, it, expect, jest } from '@jest/globals';
 
@@ -16,6 +17,12 @@ describe('PortfolioService (Unit Stats Math)', () => {
     findOne: jest.fn<() => Promise<any>>(),
   };
 
+  const mockPortfolioHistoryRepository = {
+    find: jest.fn<() => Promise<any>>(),
+    findOne: jest.fn<() => Promise<any>>(),
+    save: jest.fn<() => Promise<any>>(),
+  };
+
   const mockDataSource = {
     getRepository: jest.fn<() => any>().mockReturnValue(mockSnapshotRepository),
   };
@@ -27,6 +34,10 @@ describe('PortfolioService (Unit Stats Math)', () => {
         {
           provide: getRepositoryToken(PortfolioEntity),
           useValue: mockPortfolioRepository,
+        },
+        {
+          provide: getRepositoryToken(PortfolioHistory),
+          useValue: mockPortfolioHistoryRepository,
         },
         {
           provide: DataSource,
