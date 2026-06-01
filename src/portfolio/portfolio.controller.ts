@@ -25,4 +25,8 @@ export class PortfolioController {
   async remove(@Param('id') id: string) {
     return await this.portfolioService.remove(+id);
   }
+  @Get(':id/chart')
+  async getChartData(@Param('id') id: string) {
+    return await this.portfolioService.getHistoryData(+id);
+  }
 }
