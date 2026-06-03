@@ -21,7 +21,7 @@ export class PortfolioService {
       const portfolios = await this.findAll();
       for (const portfolio of portfolios) {
         const details = await this.findOneWithHoldings(portfolio.id);
-        const holdings = (details as any)?.holdings as any[]; //TODO: fix this typing
+        const holdings = (details as any)?.holdings as any[]; 
         
         const currentTotalValue = holdings && holdings.length > 0 
           ? holdings.reduce((sum: number, h: any) => sum + Number(h.totalValue || 0), 0)
